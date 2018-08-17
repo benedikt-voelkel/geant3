@@ -4,6 +4,7 @@
 #include "TLorentzVector.h"
 #include "TClonesArray.h"
 #include "TParticle.h"
+#include "TMCStackManager.h"
 
 #include "TDatabasePDG.h"
 #include "TGeoManager.h"
@@ -614,7 +615,7 @@ void eustep(){
    if(geant3->Gctrak()->sleng == 0) icc = 0;
    cflag=geant3->Gcmore()->iclose;
    if (geant3->Gcflag()->idebug * geant3->Gcflag()->iswit[2] != 0)geant3->Erxyzc();
- 
+
    // ---------------------------------------
    // A. Rotondi and L. Lavezzi (sept 2010)
    // changes to be able to approximate a solution when propagating
@@ -624,26 +625,26 @@ void eustep(){
    // approximation) in the forward direction.
 
    // direction vector set unitary
-   TVector3 dir(geant3->Gctrak()->vect[3], 
+   TVector3 dir(geant3->Gctrak()->vect[3],
 		geant3->Gctrak()->vect[4],
 		geant3->Gctrak()->vect[5]);
    dir.SetMag(1.);
 
    if(dir.Mag() != 0.) {
-     
+
      // if the direction is REALLY along z, (0., 0., 1), change it
      // a little
-     if(dir.Z() == 1) dir.SetMagThetaPhi(1., 1e-9, gRandom->Uniform(0., 2 * TMath::Pi())); 
-     
+     if(dir.Z() == 1) dir.SetMagThetaPhi(1., 1e-9, gRandom->Uniform(0., 2 * TMath::Pi()));
+
      Double_t cosLam0 = TMath::Sin(dir.Theta());
-     
+
      // cos(lambda) < 2.e-6 means theta < 1e-4 deg
      if(TMath::Abs(cosLam0) < 2.e-6) {
- 
+
        // cos(lambda) @ limit angle
        Double_t cosLam = TMath::Sign(1., cosLam0) * 2.e-6;
        Double_t sinLam = TMath::Sqrt(1 - cosLam * cosLam);
-       
+
        // px, py, pz reset to limit angle
        dir.SetX(dir.X() * (cosLam/cosLam0));
        dir.SetY(dir.Y() * (cosLam/cosLam0));
@@ -652,7 +653,7 @@ void eustep(){
        geant3->Gctrak()->vect[3] = dir.X();
        geant3->Gctrak()->vect[4] = dir.Y();
        geant3->Gctrak()->vect[5] = dir.Z();
-       
+
      }
    }
    // ---------------------------------------
@@ -767,18 +768,19 @@ void gustep()
   Float_t mom[3];
   static TMCProcess pProc;
 
-  TVirtualMCStack* stack = geant3->GetStack();
+  // \note Probably not needed, use TMCStackManager instead
+  //TMCQueue* queue = geant3->GetQueue();
   //     Stop particle if outside user defined tracking region
-  Double_t x, y, z, rmax;
-  geant3->TrackPosition(x,y,z);
+  Double_t x, y, z, rmax, t;
+  geant3->TrackPosition(x,y,z,t);
 
   if (geant3->IsCollectTracks()) {
      Int_t nstep = geant3->Gctrak()->nstep;
      Int_t cpdg = geant3->PDGFromId(geant3->Gckine()->ipart);
      Bool_t isnew = kFALSE; // geant3->IsNewTrack() returns true just for new used indices
      if (nstep==0) isnew = kTRUE;
-     Int_t cid = stack->GetCurrentTrackNumber();
-     Int_t mid = stack->GetCurrentParentTrackNumber();
+     Int_t cid = TMCStackManager::Instance()->GetCurrentTrackNumber();
+     Int_t mid = TMCStackManager::Instance()->GetCurrentParentTrackNumber();
      Double_t tofg = geant3->Gctrak()->tofg;
      //printf("id=%i mid=%i pdg=%i nstep=%i (%f,%f,%f)\n",cid,mid,cpdg,nstep,x,y,z);
      TVirtualGeoTrack *parent = 0;
@@ -832,7 +834,7 @@ void gustep()
       ipp = Int_t (geant3->Gcking()->gkin[jk][4]+0.5);
       // --- Skip neutrinos!
       if (ipp != 4 || !(geant3->SkipNeutrinos())) {
-        geant3->SetTrack(1,stack->GetCurrentTrackNumber(),geant3->PDGFromId(ipp), geant3->Gcking()->gkin[jk],
+        geant3->SetTrack(1,TMCStackManager::Instance()->GetCurrentTrackNumber(),geant3->PDGFromId(ipp), geant3->Gcking()->gkin[jk],
 			 geant3->Gckin3()->gpos[jk], polar,geant3->Gctrak()->tofg, pProc, nt, 1., 0);
       }
     }
@@ -843,7 +845,7 @@ void gustep()
       mom[0]=geant3->Gckin2()->xphot[jk][3]*geant3->Gckin2()->xphot[jk][6];
       mom[1]=geant3->Gckin2()->xphot[jk][4]*geant3->Gckin2()->xphot[jk][6];
       mom[2]=geant3->Gckin2()->xphot[jk][5]*geant3->Gckin2()->xphot[jk][6];
-      geant3->SetTrack(1, stack->GetCurrentTrackNumber(), geant3->PDGFromId(50),
+      geant3->SetTrack(1, TMCStackManager::Instance()->GetCurrentTrackNumber(), geant3->PDGFromId(50),
 		       mom,                             //momentum
 		       geant3->Gckin2()->xphot[jk],     //position
 		       &geant3->Gckin2()->xphot[jk][7], //polarisation

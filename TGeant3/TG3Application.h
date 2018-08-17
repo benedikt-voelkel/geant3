@@ -1,7 +1,7 @@
 // $Id$
 //
 // Class TG3Application
-// ----------------------- 
+// -----------------------
 // Implementation of the TVirtualMCApplication
 //
 // by Rene Brun 30/12/2002
@@ -18,7 +18,7 @@ class TG3Application : public TVirtualMCApplication
     TG3Application(const char *name, const char *title);
     TG3Application();
     virtual ~TG3Application();
-  
+
     // static access method
     static TG3Application* Instance(); 
 
@@ -26,7 +26,7 @@ class TG3Application : public TVirtualMCApplication
     void InitMC(const char *setup);
     void RunMC(Int_t nofEvents);
     void FinishRun();
- 
+
     virtual void ConstructGeometry();
     virtual void InitGeometry();
     virtual void GeneratePrimaries();
@@ -37,7 +37,7 @@ class TG3Application : public TVirtualMCApplication
     virtual void PostTrack();
     virtual void FinishPrimary();
     virtual void FinishEvent();
-    
+
     virtual Double_t TrackingRmax() const;
     virtual Double_t TrackingZmax() const;
     virtual void Field(const Double_t* x, Double_t* b) const;
@@ -46,7 +46,7 @@ class TG3Application : public TVirtualMCApplication
     // methods
     void ConstructMaterials();
     void ConstructVolumes();
-  
+
     // data members
     TVirtualMCStack*  fStack;
 
@@ -59,4 +59,3 @@ inline TG3Application* TG3Application::Instance()
 { return (TG3Application*)(TVirtualMCApplication::Instance()); }
 
 #endif //TG3Application_h
-

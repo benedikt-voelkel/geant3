@@ -527,6 +527,7 @@ Cleanup of code
 
 #include "TCallf77.h"
 #include "TVirtualMCDecayer.h"
+#include "TMCStackManager.h"
 #include "TPDGCode.h"
 
 #ifndef WIN32
@@ -2315,7 +2316,7 @@ void TGeant3::TrackPosition(TLorentzVector &xyz) const
 }
 
 //______________________________________________________________________
-void TGeant3::TrackPosition(Double_t &x, Double_t &y, Double_t &z) const
+void TGeant3::TrackPosition(Double_t &x, Double_t &y, Double_t &z, Double_t &t) const
 {
   //
   // Return the current position in the master reference frame of the
@@ -2324,10 +2325,11 @@ void TGeant3::TrackPosition(Double_t &x, Double_t &y, Double_t &z) const
   x=fGctrak->vect[0];
   y=fGctrak->vect[1];
   z=fGctrak->vect[2];
+  t=fGctrak->tofg;
 }
 
 //______________________________________________________________________
-void TGeant3::TrackPosition(Float_t &x, Float_t &y, Float_t &z) const
+void TGeant3::TrackPosition(Float_t &x, Float_t &y, Float_t &z, Float_t &t) const
 {
   //
   // Return the current position in the master reference frame of the
@@ -2336,6 +2338,7 @@ void TGeant3::TrackPosition(Float_t &x, Float_t &y, Float_t &z) const
   x=fGctrak->vect[0];
   y=fGctrak->vect[1];
   z=fGctrak->vect[2];
+  t=fGctrak->tofg;
 }
 
 //______________________________________________________________________
@@ -6401,14 +6404,9 @@ Bool_t TGeant3::ProcessRun(Int_t nevent)
   Int_t todo = TMath::Abs(nevent);
   for (Int_t i=0; i<todo; i++) {
      // Process one run (one run = one event)
-     fGcflag->idevt  = i;
-     fGcflag->ievent = i+1;
+
      if (fStopRun) break;
-     fApplication->BeginEvent();
-     if (fStopRun) break;
-     ProcessEvent();
-     if (fStopRun) break;
-     fApplication->FinishEvent();
+     ProcessEvent(i);
      if (fStopRun) break;
   }
 
@@ -6429,14 +6427,22 @@ Bool_t TGeant3::ProcessRun(Int_t nevent)
 }
 
 //______________________________________________________________________
-void TGeant3::ProcessEvent()
+void TGeant3::ProcessEvent(Int_t eventId)
 {
   //
   // Process one event
   //
+  // Right now do nothing with the eventId
+  fApplication->BeginEvent();
+  if (fStopRun) return;
+  fGcflag->idevt  = eventId;
+  fGcflag->ievent = eventId+1;
+  if (fStopRun) return;
   Gtrigi();
   Gtrigc();
   Gtrig();
+  if (fStopRun) return;
+  fApplication->FinishEvent();
 }
 
 //______________________________________________________________________
@@ -6513,7 +6519,7 @@ void TGeant3::SetTrack(Int_t done, Int_t parent, Int_t pdg, Float_t *pmom,
 //           pmom[0],pmom[1],pmom[2],kS);
 
 
-  GetStack()->PushTrack(done, parent, pdg, pmom[0], pmom[1], pmom[2], e,
+  TMCStackManager::Instance()->PushTrack(done, parent, pdg, pmom[0], pmom[1], pmom[2], e,
                        vpos[0],vpos[1],vpos[2],tof,polar[0],polar[1],polar[2],
                        mech, ntr, weight, is);
 }
@@ -6616,8 +6622,8 @@ extern "C" void type_of_call  rxgtrak(Int_t &mtrack,Int_t &ipart,Float_t *pmom,
   //      tof     Particle time of flight in seconds
   //
 
-  TParticle* track = TVirtualMC::GetMC()->GetStack()->PopNextTrack(mtrack);
-
+  TParticle* track = TVirtualMC::GetMC()->GetQueue()->PopNextTrack();
+  mtrack = track->ID();
   if (track) {
     // fill G3 arrays
     pmom[0] = track->Px();
@@ -6635,7 +6641,7 @@ extern "C" void type_of_call  rxgtrak(Int_t &mtrack,Int_t &ipart,Float_t *pmom,
     polar[2] = pol.Z();
     ipart = TVirtualMC::GetMC()->IdFromPDG(track->GetPdgCode());
   }
-
+  // \note What exactly happens here internally? Why is the ID incremented by 1?
   mtrack++;
 }
 
