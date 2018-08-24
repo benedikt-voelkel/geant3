@@ -6518,10 +6518,18 @@ void TGeant3::SetTrack(Int_t done, Int_t parent, Int_t pdg, Float_t *pmom,
 //	        mass,e,fNtrack,pdg,parent,done,vpos[0],vpos[1],vpos[2],
 //           pmom[0],pmom[1],pmom[2],kS);
 
+  // \note \todo There might be a mistake since done != toBeDone (as it is used in
+  //             TVirtualMCStack::PushTrack( Int_t toBeDone, ... ), where
+  //              toBeDone(=done)==1: track needs to be transported
+  //              toBeDone(=done)==0: no transportation
+  //             So in the present case where TGeant3::SetTrack is called from gustep()
+  //             in TGeant3gu with done=1 the track will be picked up for tracking
 
   TMCStackManager::Instance()->PushTrack(done, parent, pdg, pmom[0], pmom[1], pmom[2], e,
                        vpos[0],vpos[1],vpos[2],tof,polar[0],polar[1],polar[2],
                        mech, ntr, weight, is);
+  printf("TGeant3::SetTrack: Pushed track %i with todo status %i to stack", ntr, done );
+
 }
 
 
@@ -6623,14 +6631,17 @@ extern "C" void type_of_call  rxgtrak(Int_t &mtrack,Int_t &ipart,Float_t *pmom,
   //
 
   TParticle* track = TVirtualMC::GetMC()->GetQueue()->PopNextTrack();
-  mtrack = track->ID();
   if (track) {
+    mtrack = track->ID();
+    // Notify the TMCStackManager about the processed track
+    TMCStackManager::Instance()->SetCurrentTrack(mtrack);
+    printf("GEANT3: Popped track %i\n", mtrack);
     // fill G3 arrays
     pmom[0] = track->Px();
     pmom[1] = track->Py();
     pmom[2] = track->Pz();
     e = track->Energy();
-    vpos[0] = track->Vx();;
+    vpos[0] = track->Vx();
     vpos[1] = track->Vy();
     vpos[2] = track->Vz();
     tof = track->T();
@@ -6641,8 +6652,14 @@ extern "C" void type_of_call  rxgtrak(Int_t &mtrack,Int_t &ipart,Float_t *pmom,
     polar[2] = pol.Z();
     ipart = TVirtualMC::GetMC()->IdFromPDG(track->GetPdgCode());
   }
+  // \note mtrack must be smaller 0 at this point otherwise GEANT3 will try to pop forever
+  else {
+    mtrack = -1;
+  }
   // \note What exactly happens here internally? Why is the ID incremented by 1?
   mtrack++;
+
+  // /printf("GEANT3: Popped track %i and incremented mtrack\n", mtrack);
 }
 
 

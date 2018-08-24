@@ -877,7 +877,7 @@ void gukine ()
 //    ------------------------------------------------------------------
 //
 
-  vmcApplication->GeneratePrimaries();
+  vmcApplication->GimmePrimaries();
 }
 }
 // end of extern "C"
