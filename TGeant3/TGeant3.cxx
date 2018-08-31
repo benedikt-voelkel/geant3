@@ -513,7 +513,7 @@ Cleanup of code
 #include <stdlib.h>
 
 #include "TROOT.h"
-#include "TParticle.h"
+#include "TTrack.h"
 #include "TDatabasePDG.h"
 #include "TLorentzVector.h"
 #include "TArrayI.h"
@@ -6526,7 +6526,7 @@ void TGeant3::SetTrack(Int_t done, Int_t parent, Int_t pdg, Float_t *pmom,
   //             in TGeant3gu with done=1 the track will be picked up for tracking
 
   TMCStackManager::Instance()->PushTrack(done, parent, pdg, pmom[0], pmom[1], pmom[2], e,
-                       vpos[0],vpos[1],vpos[2],tof,polar[0],polar[1],polar[2],
+                       vpos[0],vpos[1],vpos[2],tof,polar[0],polar[1],polar[2], -1,
                        mech, ntr, weight, is);
   printf("TGeant3::SetTrack: Pushed track %i with todo status %i to stack", ntr, done );
 
@@ -6630,9 +6630,9 @@ extern "C" void type_of_call  rxgtrak(Int_t &mtrack,Int_t &ipart,Float_t *pmom,
   //      tof     Particle time of flight in seconds
   //
 
-  TParticle* track = TVirtualMC::GetMC()->GetQueue()->PopNextTrack();
+  TTrack* track = TVirtualMC::GetMC()->GetQueue()->PopNextTrack();
   if (track) {
-    mtrack = track->ID();
+    mtrack = track->Id();
     // Notify the TMCStackManager about the processed track
     TMCStackManager::Instance()->SetCurrentTrack(mtrack);
     printf("GEANT3: Popped track %i\n", mtrack);
