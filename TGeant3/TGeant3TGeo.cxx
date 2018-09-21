@@ -517,6 +517,9 @@ extern "C" type_of_call void ggperpTGeo(Float_t*, Float_t*, Int_t&);
 Gcvol1_t *gcvol1 = 0;
 TGeoNode *gCurrentNode = 0;
 TGeant3TGeo *geant3tgeo = 0;
+// \note \todo This is a brute-force solution to keep track of the index of the
+// TGeoNavigator
+extern Int_t gCurrentGeoStateIndex;
 R__EXTERN Gctrak_t *gctrak;
 R__EXTERN Gcvolu_t *gcvolu;
 R__EXTERN Gckine_t *gckine;
@@ -2198,7 +2201,14 @@ void ginvolTGeo(Float_t *x, Int_t &isame)
 void gtmediTGeo(Float_t *x, Int_t &numed)
 {
    gcchan->lsamvl = kTRUE;
-   gCurrentNode = gGeoManager->FindNode(x[0],x[1],x[2]);
+   if(gCurrentGeoStateIndex > -1) {
+     //printf("INFO: gtmediTGeo: Find node and volume\n");
+     gGeoManager->PopPoint(gCurrentGeoStateIndex);
+     gCurrentGeoStateIndex = -1;
+     gCurrentNode = gGeoManager->GetCurrentNode();
+   } else {
+     gCurrentNode = gGeoManager->FindNode(x[0],x[1],x[2]);
+   }
    gcchan->lsamvl = gGeoManager->IsSameLocation();
    if (gGeoManager->IsOutside()) {
       numed=0;
@@ -2220,7 +2230,15 @@ void gtmediTGeo(Float_t *x, Int_t &numed)
 //______________________________________________________________________
 void gmediaTGeo(Float_t *x, Int_t &numed, Int_t & /*check*/)
 {
-   gCurrentNode = gGeoManager->FindNode(x[0],x[1],x[2]);
+   if(gCurrentGeoStateIndex > -1) {
+     //printf("INFO: gmediaTGeo: Find node and volume\n");
+     gGeoManager->PopPoint(gCurrentGeoStateIndex);
+     gCurrentGeoStateIndex = -1;
+     gCurrentNode = gGeoManager->GetCurrentNode();
+   } else {
+     gCurrentNode = gGeoManager->FindNode(x[0],x[1],x[2]);
+   }
+   //gCurrentNode = gGeoManager->FindNode(x[0],x[1],x[2]);
    if (gGeoManager->IsOutside()) {
       numed=0;
    } else {

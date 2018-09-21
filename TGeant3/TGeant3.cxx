@@ -1087,6 +1087,10 @@ Gcjump_t *gcjump=0;          //! GCJUMP common structure
 // TVirtualMCApplication global pointer
 //
 TVirtualMCApplication* vmcApplication =0;
+// \note \todo This is a brute-force solution to keep track of the index of the
+// TGeoNavigator
+Int_t gCurrentGeoStateIndex = -1;
+TMCStackManager* gMCStackManager = 0;
 
 extern "C"  type_of_call void gtonlyg3(Int_t&);
 void (*fginvol)(Float_t*, Int_t&) = 0;
@@ -1125,6 +1129,7 @@ TGeant3::TGeant3()
   //
    geant3 = this;
    vmcApplication = TVirtualMCApplication::Instance();
+   gMCStackManager = TMCStackManager::Instance();
 }
 
 //______________________________________________________________________
@@ -1157,6 +1162,7 @@ TGeant3::TGeant3(const char *title, Int_t nwgeant)
 
   geant3 = this;
   vmcApplication = TVirtualMCApplication::Instance();
+  gMCStackManager = TMCStackManager::Instance();
 
   if(nwgeant) {
     g3zebra(nwgeant);
@@ -6525,7 +6531,7 @@ void TGeant3::SetTrack(Int_t done, Int_t parent, Int_t pdg, Float_t *pmom,
   //             So in the present case where TGeant3::SetTrack is called from gustep()
   //             in TGeant3gu with done=1 the track will be picked up for tracking
 
-  TMCStackManager::Instance()->PushTrack(done, parent, pdg, pmom[0], pmom[1], pmom[2], e,
+  gMCStackManager->PushTrack(done, parent, pdg, pmom[0], pmom[1], pmom[2], e,
                        vpos[0],vpos[1],vpos[2],tof,polar[0],polar[1],polar[2], -1,
                        mech, ntr, weight, is);
   printf("TGeant3::SetTrack: Pushed track %i with todo status %i to stack", ntr, done );
@@ -6634,8 +6640,7 @@ extern "C" void type_of_call  rxgtrak(Int_t &mtrack,Int_t &ipart,Float_t *pmom,
   if (track) {
     mtrack = track->Id();
     // Notify the TMCStackManager about the processed track
-    TMCStackManager::Instance()->SetCurrentTrack(mtrack);
-    printf("GEANT3: Popped track %i\n", mtrack);
+    gMCStackManager->SetCurrentTrack(mtrack);
     // fill G3 arrays
     pmom[0] = track->Px();
     pmom[1] = track->Py();
@@ -6651,6 +6656,11 @@ extern "C" void type_of_call  rxgtrak(Int_t &mtrack,Int_t &ipart,Float_t *pmom,
     polar[1] = pol.Y();
     polar[2] = pol.Z();
     ipart = TVirtualMC::GetMC()->IdFromPDG(track->GetPdgCode());
+    // Extract the state of the TGeoNavigator associated to this track
+    // \note \todo Move this somehow to TGeant3TGeo since this functionality
+    //             is only used there.
+    gCurrentGeoStateIndex = track->GeoStateIndex();
+    //printf("GEANT3: Popped track %i with geoStateIndex %i\n", mtrack, gCurrentGeoStateIndex);
   }
   // \note mtrack must be smaller 0 at this point otherwise GEANT3 will try to pop forever
   else {

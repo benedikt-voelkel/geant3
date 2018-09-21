@@ -21,7 +21,7 @@
 #include "geant321/pilot.h"
 *CMZ :  3.21/02 29/03/94  15.41.24  by  S.Giani
 *FCA :          17/05/99  16:21:12  by  Federico Carminati
-*               Added the modifications of P.Nevski in MANY volumes 
+*               Added the modifications of P.Nevski in MANY volumes
 *               force update of alternative list of many candidates
 *-- Author :
       SUBROUTINE G3TRACK
@@ -291,7 +291,7 @@ C.    ------------------------------------------------------------------
       SAFETY = SAFETY -STEP
 #if !defined(CERNLIB_USRJMP)
       CALL GUSTEP
-#endif 
+#endif
 #if defined(CERNLIB_USRJMP)
       CALL JUMPT0(JUSTEP)
 #endif
@@ -307,11 +307,12 @@ C.    ------------------------------------------------------------------
          VECT(5) = VECT(5)*CMOD
          VECT(6) = VECT(6)*CMOD
       ENDIF
-*                                        force update of alternatives:  
+*                                        force update of alternatives:
       IF (INWVOL.EQ.0) then
          call gtonly(isOnly)
-         if (isOnly.eq.0.and.Safety.le.0.and.Iswit(10).ge.0)
-     +        CALL GTMEDI(VECT,NMED)
+         if (isOnly.eq.0.and.Safety.le.0.and.Iswit(10).ge.0) then
+            CALL GTMEDI(VECT,NMED)
+         endif
          GO TO 80
       endif
 *
