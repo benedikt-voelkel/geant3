@@ -397,6 +397,8 @@ Cleanup of code
 #include "TGeoManager.h"
 #include "TGeoMatrix.h"
 #include "TGeoMCGeometry.h"
+#include "TGeoCacheManual.h"
+#include "TGeoBranchArray.h"
 
 #include "TCallf77.h"
 #include "TVirtualMCDecayer.h"
@@ -520,6 +522,7 @@ TGeant3TGeo *geant3tgeo = 0;
 // \note \todo This is a brute-force solution to keep track of the index of the
 // TGeoNavigator
 extern Int_t gCurrentGeoStateIndex;
+extern TGeoCacheManual* gMCGeoStateCache;
 R__EXTERN Gctrak_t *gctrak;
 R__EXTERN Gcvolu_t *gcvolu;
 R__EXTERN Gckine_t *gckine;
@@ -632,6 +635,7 @@ Int_t TGeant3TGeo::NextVolUp(Text_t *name, Int_t &copy)
   }
   return 0;
 }
+
 
 //_____________________________________________________________________________
 Int_t TGeant3TGeo::CurrentVolID(Int_t &copy) const
@@ -2201,9 +2205,10 @@ void ginvolTGeo(Float_t *x, Int_t &isame)
 void gtmediTGeo(Float_t *x, Int_t &numed)
 {
    gcchan->lsamvl = kTRUE;
+   // Set cached geometry state if available, else find node manually.
    if(gCurrentGeoStateIndex > -1) {
-     //printf("INFO: gtmediTGeo: Find node and volume\n");
-     gGeoManager->PopPoint(gCurrentGeoStateIndex);
+     gMCGeoStateCache->GetGeoState(gCurrentGeoStateIndex)->UpdateNavigator(gGeoManager->GetCurrentNavigator());
+     gGeoManager->SetCurrentPoint(x[0],x[1],x[2]);
      gCurrentGeoStateIndex = -1;
      gCurrentNode = gGeoManager->GetCurrentNode();
    } else {
@@ -2230,15 +2235,15 @@ void gtmediTGeo(Float_t *x, Int_t &numed)
 //______________________________________________________________________
 void gmediaTGeo(Float_t *x, Int_t &numed, Int_t & /*check*/)
 {
+  // Set cached geometry state if available, else find node manually.
    if(gCurrentGeoStateIndex > -1) {
-     //printf("INFO: gmediaTGeo: Find node and volume\n");
-     gGeoManager->PopPoint(gCurrentGeoStateIndex);
+     gMCGeoStateCache->GetGeoState(gCurrentGeoStateIndex)->UpdateNavigator(gGeoManager->GetCurrentNavigator());
+     gGeoManager->SetCurrentPoint(x[0],x[1],x[2]);
      gCurrentGeoStateIndex = -1;
      gCurrentNode = gGeoManager->GetCurrentNode();
    } else {
      gCurrentNode = gGeoManager->FindNode(x[0],x[1],x[2]);
    }
-   //gCurrentNode = gGeoManager->FindNode(x[0],x[1],x[2]);
    if (gGeoManager->IsOutside()) {
       numed=0;
    } else {

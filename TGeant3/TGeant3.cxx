@@ -528,6 +528,7 @@ Cleanup of code
 #include "TCallf77.h"
 #include "TVirtualMCDecayer.h"
 #include "TMCStackManager.h"
+#include "TGeoCacheManual.h"
 #include "TPDGCode.h"
 
 #ifndef WIN32
@@ -1091,6 +1092,7 @@ TVirtualMCApplication* vmcApplication =0;
 // TGeoNavigator
 Int_t gCurrentGeoStateIndex = -1;
 TMCStackManager* gMCStackManager = 0;
+TGeoCacheManual* gMCGeoStateCache = 0;
 
 extern "C"  type_of_call void gtonlyg3(Int_t&);
 void (*fginvol)(Float_t*, Int_t&) = 0;
@@ -1130,6 +1132,7 @@ TGeant3::TGeant3()
    geant3 = this;
    vmcApplication = TVirtualMCApplication::Instance();
    gMCStackManager = TMCStackManager::Instance();
+   gMCGeoStateCache = TGeoCacheManual::Instance();
 }
 
 //______________________________________________________________________
@@ -1163,6 +1166,7 @@ TGeant3::TGeant3(const char *title, Int_t nwgeant)
   geant3 = this;
   vmcApplication = TVirtualMCApplication::Instance();
   gMCStackManager = TMCStackManager::Instance();
+  gMCGeoStateCache = TGeoCacheManual::Instance();
 
   if(nwgeant) {
     g3zebra(nwgeant);
@@ -6534,7 +6538,7 @@ void TGeant3::SetTrack(Int_t done, Int_t parent, Int_t pdg, Float_t *pmom,
   gMCStackManager->PushTrack(done, parent, pdg, pmom[0], pmom[1], pmom[2], e,
                        vpos[0],vpos[1],vpos[2],tof,polar[0],polar[1],polar[2], -1,
                        mech, ntr, weight, is);
-  printf("TGeant3::SetTrack: Pushed track %i with todo status %i to stack", ntr, done );
+  //printf("TGeant3::SetTrack: Pushed track %i with todo status %i to stack", ntr, done );
 
 }
 
@@ -6636,7 +6640,7 @@ extern "C" void type_of_call  rxgtrak(Int_t &mtrack,Int_t &ipart,Float_t *pmom,
   //      tof     Particle time of flight in seconds
   //
 
-  TTrack* track = TVirtualMC::GetMC()->GetQueue()->PopNextTrack();
+  const TTrack* track = TVirtualMC::GetMC()->GetQueue()->PopNextTrack();
   if (track) {
     mtrack = track->Id();
     // Notify the TMCStackManager about the processed track
