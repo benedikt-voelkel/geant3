@@ -4,7 +4,6 @@
 #include "TLorentzVector.h"
 #include "TClonesArray.h"
 #include "TParticle.h"
-#include "TMCStackManager.h"
 
 #include "TDatabasePDG.h"
 #include "TGeoManager.h"
@@ -111,7 +110,6 @@
 extern TGeant3* geant3;
 extern TGeoManager *gGeoManager;
 extern TVirtualMCApplication* vmcApplication;
-extern TMCStackManager* gMCStackManager;
 
 extern "C" type_of_call void calsig();
 extern "C" type_of_call void gcalor();
@@ -769,8 +767,7 @@ void gustep()
   Float_t mom[3];
   static TMCProcess pProc;
 
-  // \note Probably not needed, use TMCStackManager instead
-  //TMCQueue* queue = geant3->GetQueue();
+  TVirtualMCStack* stack = geant3->GetStack();
   //     Stop particle if outside user defined tracking region
   Double_t x, y, z, rmax, t;
   geant3->TrackPosition(x,y,z,t);
@@ -780,8 +777,8 @@ void gustep()
      Int_t cpdg = geant3->PDGFromId(geant3->Gckine()->ipart);
      Bool_t isnew = kFALSE; // geant3->IsNewTrack() returns true just for new used indices
      if (nstep==0) isnew = kTRUE;
-     Int_t cid = gMCStackManager->GetCurrentTrackNumber();
-     Int_t mid = gMCStackManager->GetCurrentParentTrackNumber();
+     Int_t cid = stack->GetCurrentTrackNumber();
+     Int_t mid = stack->GetCurrentParentTrackNumber();
      Double_t tofg = geant3->Gctrak()->tofg;
      //printf("id=%i mid=%i pdg=%i nstep=%i (%f,%f,%f)\n",cid,mid,cpdg,nstep,x,y,z);
      TVirtualGeoTrack *parent = 0;
@@ -835,7 +832,7 @@ void gustep()
       ipp = Int_t (geant3->Gcking()->gkin[jk][4]+0.5);
       // --- Skip neutrinos!
       if (ipp != 4 || !(geant3->SkipNeutrinos())) {
-        geant3->SetTrack(1,gMCStackManager->GetCurrentTrackNumber(),geant3->PDGFromId(ipp), geant3->Gcking()->gkin[jk],
+        geant3->SetTrack(1,stack->GetCurrentTrackNumber(),geant3->PDGFromId(ipp), geant3->Gcking()->gkin[jk],
 			 geant3->Gckin3()->gpos[jk], polar,geant3->Gctrak()->tofg, pProc, nt, 1., 0);
       }
     }
@@ -846,7 +843,7 @@ void gustep()
       mom[0]=geant3->Gckin2()->xphot[jk][3]*geant3->Gckin2()->xphot[jk][6];
       mom[1]=geant3->Gckin2()->xphot[jk][4]*geant3->Gckin2()->xphot[jk][6];
       mom[2]=geant3->Gckin2()->xphot[jk][5]*geant3->Gckin2()->xphot[jk][6];
-      geant3->SetTrack(1, gMCStackManager->GetCurrentTrackNumber(), geant3->PDGFromId(50),
+      geant3->SetTrack(1, stack->GetCurrentTrackNumber(), geant3->PDGFromId(50),
 		       mom,                             //momentum
 		       geant3->Gckin2()->xphot[jk],     //position
 		       &geant3->Gckin2()->xphot[jk][7], //polarisation
@@ -878,7 +875,7 @@ void gukine ()
 //    ------------------------------------------------------------------
 //
 
-  vmcApplication->GimmePrimaries();
+  vmcApplication->GeneratePrimaries();
 }
 }
 // end of extern "C"

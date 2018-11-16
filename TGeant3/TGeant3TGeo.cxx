@@ -397,7 +397,7 @@ Cleanup of code
 #include "TGeoManager.h"
 #include "TGeoMatrix.h"
 #include "TGeoMCGeometry.h"
-#include "TGeoCacheManual.h"
+#include "TGeoStateCache.h"
 #include "TGeoBranchArray.h"
 
 #include "TCallf77.h"
@@ -519,10 +519,9 @@ extern "C" type_of_call void ggperpTGeo(Float_t*, Float_t*, Int_t&);
 Gcvol1_t *gcvol1 = 0;
 TGeoNode *gCurrentNode = 0;
 TGeant3TGeo *geant3tgeo = 0;
-// \note \todo This is a brute-force solution to keep track of the index of the
-// TGeoNavigator
+// Keep track of the index of the geometry state
 extern Int_t gCurrentGeoStateIndex;
-extern TGeoCacheManual* gMCGeoStateCache;
+extern TGeoStateCache* gMCGeoStateCache;
 R__EXTERN Gctrak_t *gctrak;
 R__EXTERN Gcvolu_t *gcvolu;
 R__EXTERN Gckine_t *gckine;
