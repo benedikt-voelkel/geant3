@@ -675,8 +675,8 @@ public:
   const char* VolName(Int_t id) const;
   Double_t Xsec(char* reac, Double_t energy, Int_t part, Int_t mate);
   void  TrackPosition(TLorentzVector &xyz) const;
-  void  TrackPosition(Double_t &x, Double_t &y, Double_t &z, Double_t &t) const;
-  void  TrackPosition(Float_t &x, Float_t &y, Float_t &z, Float_t &t) const;
+  void  TrackPosition(Double_t &x, Double_t &y, Double_t &z) const;
+  void  TrackPosition(Float_t &x, Float_t &y, Float_t &z) const;
   void  TrackMomentum(TLorentzVector &xyz) const;
   void  TrackMomentum(Double_t &px, Double_t &py, Double_t &pz,
                       Double_t &etot) const;
@@ -1186,10 +1186,7 @@ protected:
   // commons for GEANE
   Gconst_t *fGconst;          //! GCONST common structure
   Gconsx_t *fGconsx;          //! GCONSX common structure
-  Gcjump_t *fGcjump;          //! GCJUMP common structure
-
-
-
+  Gcjump_t *fGcjump;          //! GCJUMP common
 
   //Put here all volume names
 

@@ -13,7 +13,6 @@
 #include "TGeant3.h"
 
 class TGeoMaterial;
-
 //______________________________________________________________
 //
 //       Geant3 prototypes for commons

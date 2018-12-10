@@ -397,8 +397,8 @@ Cleanup of code
 #include "TGeoManager.h"
 #include "TGeoMatrix.h"
 #include "TGeoMCGeometry.h"
-#include "TGeoStateCache.h"
 #include "TGeoBranchArray.h"
+#include "TGeoMCBranchArrayContainer.h"
 
 #include "TCallf77.h"
 #include "TVirtualMCDecayer.h"
@@ -521,7 +521,6 @@ TGeoNode *gCurrentNode = 0;
 TGeant3TGeo *geant3tgeo = 0;
 // Keep track of the index of the geometry state
 extern Int_t gCurrentGeoStateIndex;
-extern TGeoStateCache* gMCGeoStateCache;
 R__EXTERN Gctrak_t *gctrak;
 R__EXTERN Gcvolu_t *gcvolu;
 R__EXTERN Gckine_t *gckine;
@@ -540,7 +539,6 @@ R__EXTERN void (*fgmedia)(Float_t*, Int_t&, Int_t&);
 R__EXTERN void (*fglvolu)(Int_t &nlev, Int_t *lnam,Int_t *lnum, Int_t &ier);
 R__EXTERN void (*fgtnext)();
 R__EXTERN void (*fggperp)(Float_t*, Float_t*, Int_t&);
-
 
 //____________________________________________________________________________
 TGeant3TGeo::TGeant3TGeo()
@@ -716,8 +714,8 @@ Bool_t TGeant3TGeo::CurrentBoundaryNormal(Double_t &x, Double_t &y, Double_t &z)
 
   if ( ! IsTrackEntering() && ! IsTrackExiting() ) return kFALSE;
 
-  Double_t pt[3], t;
-  TrackPosition(pt[0], pt[1], pt[2], t);
+  Double_t pt[3];
+  TrackPosition(pt[0], pt[1], pt[2]);
   gGeoManager->SetCurrentPoint(pt);
   const Double_t* norm = gGeoManager->FindNormalFast();
   if (!norm) return kFALSE;
@@ -2199,16 +2197,20 @@ void ginvolTGeo(Float_t *x, Int_t &isame)
    else isame = 0;
 }
 
-
 //______________________________________________________________________
 void gtmediTGeo(Float_t *x, Int_t &numed)
 {
    gcchan->lsamvl = kTRUE;
+   TGeoMCBranchArrayContainer* branchArrayContainer = gMC->GetBranchArrayContainer();
    // Set cached geometry state if available, else find node manually.
-   if(gCurrentGeoStateIndex > -1) {
-     gMCGeoStateCache->GetGeoState(gCurrentGeoStateIndex)->UpdateNavigator(gGeoManager->GetCurrentNavigator());
-     gGeoManager->SetCurrentPoint(x[0],x[1],x[2]);
+   if(gCurrentGeoStateIndex > -1 && branchArrayContainer) {
+     branchArrayContainer->GetGeoState(gCurrentGeoStateIndex)
+                         ->UpdateNavigator(gGeoManager->GetCurrentNavigator());
+     // Geo state has been used so free it.
+     branchArrayContainer->FreeGeoState(gCurrentGeoStateIndex);
+     // Reset geo state index
      gCurrentGeoStateIndex = -1;
+     gGeoManager->SetCurrentPoint(x[0],x[1],x[2]);
      gCurrentNode = gGeoManager->GetCurrentNode();
    } else {
      gCurrentNode = gGeoManager->FindNode(x[0],x[1],x[2]);
@@ -2234,11 +2236,17 @@ void gtmediTGeo(Float_t *x, Int_t &numed)
 //______________________________________________________________________
 void gmediaTGeo(Float_t *x, Int_t &numed, Int_t & /*check*/)
 {
-  // Set cached geometry state if available, else find node manually.
-   if(gCurrentGeoStateIndex > -1) {
-     gMCGeoStateCache->GetGeoState(gCurrentGeoStateIndex)->UpdateNavigator(gGeoManager->GetCurrentNavigator());
-     gGeoManager->SetCurrentPoint(x[0],x[1],x[2]);
+    // Set cached geometry state if available, else find node manually.
+   TGeoMCBranchArrayContainer* branchArrayContainer = gMC->GetBranchArrayContainer();
+   // Set cached geometry state if available, else find node manually.
+   if(gCurrentGeoStateIndex > -1 && branchArrayContainer) {
+     branchArrayContainer->GetGeoState(gCurrentGeoStateIndex)
+                         ->UpdateNavigator(gGeoManager->GetCurrentNavigator());
+     // Geo state has been used so free it.
+     branchArrayContainer->FreeGeoState(gCurrentGeoStateIndex);
+     // Reset geo state index.
      gCurrentGeoStateIndex = -1;
+     gGeoManager->SetCurrentPoint(x[0],x[1],x[2]);
      gCurrentNode = gGeoManager->GetCurrentNode();
    } else {
      gCurrentNode = gGeoManager->FindNode(x[0],x[1],x[2]);
@@ -2387,8 +2395,8 @@ void ggperpTGeo(Float_t * /*x*/, Float_t *norm, Int_t &ierr)
 // FindNextBoundary() was already called.
    ierr = 0;
    // Make sure that the geometry has the current point
-   Double_t pt[3], t;
-   geant3tgeo->TrackPosition(pt[0], pt[1], pt[2], t);
+   Double_t pt[3];
+   geant3tgeo->TrackPosition(pt[0], pt[1], pt[2]);
    gGeoManager->SetCurrentPoint(pt);
    Double_t *dblnorm = gGeoManager->FindNormalFast();
    if (!dblnorm) {

@@ -769,8 +769,8 @@ void gustep()
 
   TVirtualMCStack* stack = geant3->GetStack();
   //     Stop particle if outside user defined tracking region
-  Double_t x, y, z, rmax, t;
-  geant3->TrackPosition(x,y,z,t);
+  Double_t x, y, z, rmax;
+  geant3->TrackPosition(x,y,z);
 
   if (geant3->IsCollectTracks()) {
      Int_t nstep = geant3->Gctrak()->nstep;

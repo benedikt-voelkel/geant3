@@ -511,6 +511,12 @@ Cleanup of code
 
 #include <ctype.h>
 #include <stdlib.h>
+#include <iostream>
+
+
+
+
+
 
 #include "TROOT.h"
 #include "TParticle.h"
@@ -527,7 +533,6 @@ Cleanup of code
 
 #include "TCallf77.h"
 #include "TVirtualMCDecayer.h"
-#include "TGeoStateCache.h"
 #include "TPDGCode.h"
 
 #ifndef WIN32
@@ -1064,7 +1069,6 @@ extern "C" type_of_call void glvolu(Int_t &nlev, Int_t *lnam,Int_t *lnum, Int_t 
 extern "C" type_of_call void gtnext();
 extern "C" type_of_call void ggperp(Float_t*, Float_t*, Int_t&);
 
-
 //
 // Geant3 global pointer
 //
@@ -1090,7 +1094,6 @@ TVirtualMCApplication* vmcApplication =0;
 // \note \todo This is a brute-force solution to keep track of the index of the
 // TGeoNavigator
 Int_t gCurrentGeoStateIndex = -1;
-TGeoStateCache* gMCGeoStateCache = 0;
 
 extern "C"  type_of_call void gtonlyg3(Int_t&);
 void (*fginvol)(Float_t*, Int_t&) = 0;
@@ -1129,7 +1132,6 @@ TGeant3::TGeant3()
   //
    geant3 = this;
    vmcApplication = TVirtualMCApplication::Instance();
-   gMCGeoStateCache = TGeoStateCache::Instance();
 }
 
 //______________________________________________________________________
@@ -1162,7 +1164,6 @@ TGeant3::TGeant3(const char *title, Int_t nwgeant)
 
   geant3 = this;
   vmcApplication = TVirtualMCApplication::Instance();
-  gMCGeoStateCache = TGeoStateCache::Instance();
 
   if(nwgeant) {
     g3zebra(nwgeant);
@@ -2322,7 +2323,7 @@ void TGeant3::TrackPosition(TLorentzVector &xyz) const
 }
 
 //______________________________________________________________________
-void TGeant3::TrackPosition(Double_t &x, Double_t &y, Double_t &z, Double_t &t) const
+void TGeant3::TrackPosition(Double_t &x, Double_t &y, Double_t &z) const
 {
   //
   // Return the current position in the master reference frame of the
@@ -2331,11 +2332,10 @@ void TGeant3::TrackPosition(Double_t &x, Double_t &y, Double_t &z, Double_t &t) 
   x=fGctrak->vect[0];
   y=fGctrak->vect[1];
   z=fGctrak->vect[2];
-  t=fGctrak->tofg;
 }
 
 //______________________________________________________________________
-void TGeant3::TrackPosition(Float_t &x, Float_t &y, Float_t &z, Float_t &t) const
+void TGeant3::TrackPosition(Float_t &x, Float_t &y, Float_t &z) const
 {
   //
   // Return the current position in the master reference frame of the
@@ -2344,7 +2344,6 @@ void TGeant3::TrackPosition(Float_t &x, Float_t &y, Float_t &z, Float_t &t) cons
   x=fGctrak->vect[0];
   y=fGctrak->vect[1];
   z=fGctrak->vect[2];
-  t=fGctrak->tofg;
 }
 
 //______________________________________________________________________
@@ -6525,17 +6524,9 @@ void TGeant3::SetTrack(Int_t done, Int_t parent, Int_t pdg, Float_t *pmom,
 //	        mass,e,fNtrack,pdg,parent,done,vpos[0],vpos[1],vpos[2],
 //           pmom[0],pmom[1],pmom[2],kS);
 
-  // \note \todo There might be a mistake since done != toBeDone (as it is used in
-  //             TVirtualMCStack::PushTrack( Int_t toBeDone, ... ), where
-  //              toBeDone(=done)==1: track needs to be transported
-  //              toBeDone(=done)==0: no transportation
-  //             So in the present case where TGeant3::SetTrack is called from gustep()
-  //             in TGeant3gu with done=1 the track will be picked up for tracking
-
   GetStack()->PushTrack(done, parent, pdg, pmom[0], pmom[1], pmom[2], e,
-                       vpos[0],vpos[1],vpos[2],tof,polar[0],polar[1],polar[2], -1,
+                       vpos[0],vpos[1],vpos[2],tof,polar[0],polar[1],polar[2],
                        mech, ntr, weight, is);
-  //printf("TGeant3::SetTrack: Pushed track %i with todo status %i to stack", ntr, done );
 
 }
 
@@ -6639,12 +6630,14 @@ extern "C" void type_of_call  rxgtrak(Int_t &mtrack,Int_t &ipart,Float_t *pmom,
   TVirtualMCStack* stack = TVirtualMC::GetMC()->GetStack();
   // Pop and get track Id as well as the index of the potential current
   // geometry state
-  const TParticle* track = stack->PopNextTrack(mtrack, gCurrentGeoStateIndex);
+
+  const TParticle* track = stack->PopNextTrack(mtrack);
   if (track) {
     // Notify the TVirtualMCStack about the processed track. This needs to be
     // done in case the user does not set this track to the current track when
     // it is popped.
     stack->SetCurrentTrack(mtrack);
+    gCurrentGeoStateIndex = stack->GetCurrentTrackGeoStateIndex();
     // fill G3 arrays
     pmom[0] = track->Px();
     pmom[1] = track->Py();
