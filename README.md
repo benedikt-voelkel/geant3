@@ -13,13 +13,15 @@ In this version all Geant3 gxxxxx routines have been renamed g3xxxxx.
 
 ### TGeant3 (Geant3 VMC)
 
+**IMPORTANT NOTE**: This version currently only works when building against [this ROOT version](https://github.com/benedikt-voelkel/root/tree/v6-14-06-multi-engines-wip-mgr)
+
 The directory TGeant3 contains the classes TGeant3 and TGeant3TGeo,
 which implement the  TVirtualMC interface, see more about VMC at: <br/>
 [https://root.cern.ch/vmc](https://root.cern.ch/vmc)
 
 ### Examples
 
-The directory examples includes a set of FORTRAN examples 
+The directory examples includes a set of FORTRAN examples
 like gexam1.F, gexam3.F, gexam4.F and model.F, plus the ROOT (C++) macros
 E01.C, E02.C, E03.C
 
@@ -50,4 +52,3 @@ These scripts require the geant4_vmc file in a separate tar file.
 
 At present, the geant3 package is tested only using the test suites defined
 in geant4_vmc/examples.
-
